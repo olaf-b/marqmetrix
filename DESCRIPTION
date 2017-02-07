@@ -1,0 +1,10 @@
+Package: Marqmetrix
+Type: Package
+Title: Read Marqmatrix RAMAN specter files
+Version: 1.0
+Date: 2017-02-07
+Author: Olaf Trygve Berglihn
+Maintainer: Olaf Trygve Berglihn <oberg@sintef.no>
+Description: Reads Marqmatrix RAMAN specter files
+License: GPL-2
+Depends: hyperSpec
