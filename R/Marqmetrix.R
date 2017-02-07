@@ -41,7 +41,7 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list()) {
             stop(paste(files[f], "has different wavelength axis."))
     
         spc[f, ] <- buffer$Counts
-        rbind(data, hdr)
+        data <- rbind(data, hdr)
     }
     
     ## make the hyperSpec object
