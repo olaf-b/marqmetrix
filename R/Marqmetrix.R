@@ -28,21 +28,23 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
     buffer  <- read.table(files[1], skip=14, header=TRUE, fill=TRUE)
     wavelength <- buffer[, abscissa]
     data <- scan.txt.marqmetrix.header(files[1])
-
-    ## preallocate spectra matrix
+    darkfile <- paste(dirname(files[1], data$processing, sep=""))
+    darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
     spc <- matrix(ncol = nrow(buffer), nrow = length(files))
-
-    spc[1, ] <- buffer[, ordinate]
+    spc[1, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
 
     ## read remaining files
     for (f in seq(along=files)[-1]) {
         buffer  <- read.table(files[f], skip=14, header=TRUE, fill=TRUE)
 	hdr <- scan.txt.marqmetrix.header(files[f])
+        darkfile <- paste(dirname(files[1], data$processing, sep=""))
+        darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
+
  	## Check wether they have the same wavelength axis
         if (! all.equal(buffer[, 1], wavelength))
             stop(paste(files[f], "has different wavelength axis."))
     
-        spc[f, ] <- buffer[, ordinate]
+        spc[f, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
         data <- rbind(data, hdr)
     }
     
