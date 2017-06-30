@@ -4,7 +4,8 @@
 
 scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
 				abscissa="Wavelength",
-				ordinate="Counts") {
+				ordinate="Counts",
+				darks=FALSE) {
 
     ## set some defaults
     long <- list(files = files, ..., label = label)
@@ -28,23 +29,33 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
     buffer  <- read.table(files[1], skip=14, header=TRUE, fill=TRUE)
     wavelength <- buffer[, abscissa]
     data <- scan.txt.marqmetrix.header(files[1])
-    darkfile <- paste(dirname(files[1], data$processing, sep=""))
-    darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
+    darkfile <- file.path(dirname(files[1]), data$processing)
     spc <- matrix(ncol = nrow(buffer), nrow = length(files))
-    spc[1, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
+    
+    if (darks) {
+	    darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
+	    spc[1, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
+	} else {
+	    spc[1, ] <- buffer[, ordinate]
+    }
 
     ## read remaining files
     for (f in seq(along=files)[-1]) {
         buffer  <- read.table(files[f], skip=14, header=TRUE, fill=TRUE)
 	hdr <- scan.txt.marqmetrix.header(files[f])
-        darkfile <- paste(dirname(files[1], data$processing, sep=""))
-        darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
+        darkfile <- file.path(dirname(files[f]), hdr$processing)
 
  	## Check wether they have the same wavelength axis
         if (! all.equal(buffer[, 1], wavelength))
             stop(paste(files[f], "has different wavelength axis."))
     
-        spc[f, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
+	if (darks) {
+	    darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
+	    spc[f, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
+	} else {
+	    spc[f, ] <- buffer[, ordinate]
+	}
+
         data <- rbind(data, hdr)
     }
     
