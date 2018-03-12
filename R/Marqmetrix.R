@@ -3,13 +3,13 @@
 ## Date: 2017-02-07
 
 scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
-				abscissa="Wavelength",
+				abscissa="RamanShift",
 				ordinate="Counts",
 				darks=FALSE) {
 
     ## set some defaults
     long <- list(files = files, ..., label = label)
-    label <- modifyList(list(.wavelength = expression(Wavelength),
+    label <- modifyList(list(.wavelength = expression(Raman ~ shift ~ "["*cm^{-1}*"]"),
         spc = expression (Count)), label)
 
     ## find the files
@@ -46,7 +46,7 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
         darkfile <- file.path(dirname(files[f]), hdr$processing)
 
  	## Check wether they have the same wavelength axis
-        if (! all.equal(buffer[, 1], wavelength))
+        if (! all.equal(buffer[, abscissa], wavelength))
             stop(paste(files[f], "has different wavelength axis."))
     
 	if (darks) {
