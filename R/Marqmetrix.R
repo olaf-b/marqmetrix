@@ -29,7 +29,7 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
     buffer  <- read.table(files[1], skip=14, header=TRUE, fill=TRUE)
     wavelength <- buffer[, abscissa]
     data <- scan.txt.marqmetrix.header(files[1])
-    darkfile <- file.path(dirname(files[1]), data$processing)
+    darkfile <- strsplit(file.path(dirname(files[1]), data$processing), ',')[[1]][1]
     spc <- matrix(ncol = nrow(buffer), nrow = length(files))
     
     if (darks) {
@@ -43,7 +43,7 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
     for (f in seq(along=files)[-1]) {
         buffer  <- read.table(files[f], skip=14, header=TRUE, fill=TRUE)
 	hdr <- scan.txt.marqmetrix.header(files[f])
-        darkfile <- file.path(dirname(files[f]), hdr$processing)
+        darkfile <- strsplit(file.path(dirname(files[f]), hdr$processing), ',')[[1]][1]
 
  	## Check wether they have the same wavelength axis
         if (! all.equal(buffer[, abscissa], wavelength))
