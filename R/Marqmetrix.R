@@ -1,10 +1,10 @@
 ## marqmetrix.R - import filter for Marqmetrix Raman specter files
 ## Author: Olaf Trygve Berglihn <oberg@sintef.no>
-## Date: 2017-02-07
+## Date: 2018-12-18
 
 scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
 				abscissa="RamanShift",
-				ordinate="Counts",
+				ordinate="DarkSubtracted",
 				darks=FALSE) {
 
     ## set some defaults
@@ -25,32 +25,41 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
         return(new("hyperSpec"))
     }
 
+    ## detect the number of lines for the header
+    filebuf <- readLines(files[1])
+    headlines <- which(! nzchar(filebuf))[1]
+
+    ## Find the column titles, remove spaces
+    colnames <- array(unlist(lapply(strsplit(filebuf[headlines+1], '\t'), gsub,
+                       pattern = " ", replacement = "", fixed=TRUE)))
+    
     ## read the first file
-    buffer  <- read.table(files[1], skip=14, header=TRUE, fill=TRUE)
+    buffer  <- read.table(files[1], skip=headlines+2, header=FALSE, fill=TRUE, col.names=colnames)
     wavelength <- buffer[, abscissa]
-    data <- scan.txt.marqmetrix.header(files[1])
-    darkfile <- strsplit(file.path(dirname(files[1]), data$processing), ',')[[1]][1]
+    data <- scan.txt.marqmetrix.header(files[1], headlines)
+
     spc <- matrix(ncol = nrow(buffer), nrow = length(files))
     
-    if (darks) {
-	    darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
+    if (darks && !identical(df$Processing, "dark subtract")) {
+        darkfile <- strsplit(file.path(dirname(files[1]), data$Processing), ',')[[1]][1]
+        darkbuffer <- read.table(darkfile, skip=headlines+1, header=TRUE, fill=TRUE)
 	    spc[1, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
-	} else {
-	    spc[1, ] <- buffer[, ordinate]
+    } else {
+        spc[1, ] <- buffer[, ordinate]
     }
 
     ## read remaining files
     for (f in seq(along=files)[-1]) {
-        buffer  <- read.table(files[f], skip=14, header=TRUE, fill=TRUE)
-	hdr <- scan.txt.marqmetrix.header(files[f])
-        darkfile <- strsplit(file.path(dirname(files[f]), hdr$processing), ',')[[1]][1]
+        buffer  <- read.table(files[f], skip=headlines+2, header=FALSE, fill=TRUE, col.names=colnames)
+	hdr <- scan.txt.marqmetrix.header(files[f], headlines)
 
  	## Check wether they have the same wavelength axis
         if (! all.equal(buffer[, abscissa], wavelength))
             stop(paste(files[f], "has different wavelength axis."))
-    
-	if (darks) {
-	    darkbuffer <- read.table(darkfile, skip=14, header=TRUE, fill=TRUE)
+
+        if (darks && !identical(df$Processing, "dark subtract")) {
+            darkfile <- strsplit(file.path(dirname(files[f]), hdr$Processing), ',')[[1]][1]
+	    darkbuffer <- read.table(darkfile, skip=headlines+1, header=TRUE, fill=TRUE)
 	    spc[f, ] <- buffer[, ordinate] - darkbuffer[, ordinate]
 	} else {
 	    spc[f, ] <- buffer[, ordinate]
@@ -65,30 +74,19 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
 }
 
 
-scan.txt.marqmetrix.header <- function(file) {
-    hdr <- scan(file, what ="raw", sep='\t', nlines=13)
-    file <- file
-    software.version <- hdr[min(which(match(hdr, "Software Version:")
-				      == TRUE))+1]
-    spectrometer.sn <- hdr[min(which(match(hdr, "Spectrometer SN:")
-				     == TRUE))+1]
-    date <- strptime(hdr[min(which(match(hdr, "Date:")==TRUE))+1],
-    		  format="%m/%d/%Y %H:%M:%S %p", tz="CET")
-    integration.time <- as.numeric(hdr[min(which(match(hdr, 
-        "Integration time:")==TRUE))+1])
-    averages <- as.numeric(hdr[min(which(match(hdr, "Averages:")==TRUE))+1])
-    delay <- as.numeric(hdr[min(which(match(hdr, "Delay:") == TRUE))+1])
-    sequence.number <- as.numeric(hdr[min(which(match(hdr, "Sequence Number:")
-					       	== TRUE))+1])
-    processing <- hdr[min(which(match(hdr, "Processing:") == TRUE))+1]
-    background <- hdr[min(which(match(hdr, "Background:") == TRUE))+1]
-    spectral.points <- as.numeric(hdr[min(which(match(hdr, "Spectral Points:")
-					       	== TRUE))+1])
-    laser.power <- hdr[min(which(match(hdr, "Laser Power:") == TRUE))+1]
-    system.temp <- hdr[min(which(match(hdr, "System Temp:") == TRUE))+1]
-    tec.temp <- hdr[min(which(match(hdr, "TEC Temp:") == TRUE))+1]	                    
-    return(data.frame(file, software.version, spectrometer.sn, date,
-        integration.time, averages, delay, sequence.number, processing,
-        background, spectral.points, laser.power, system.temp, tec.temp))
+scan.txt.marqmetrix.header <- function(file, nlines) {
+    hdr <- scan(file, what ="raw", sep='\t', nlines=nlines)
+
+    keywords <- unlist(lapply(hdr[seq(1,length(header), by=2)],
+                              function(x) {make.names(str_remove(x, ':$'))}))
+    keywords <- c(keywords, "File")
+    
+    values <- header[seq(2,length(header),by=2)]
+    values <- c(values, file)
+
+    df <- data.frame(matrix(ncol=length(keywords), nrow=0))
+    colnames(df) <- keywords
+    df[1,] <- values
+    return(df)
 }		       	 
 

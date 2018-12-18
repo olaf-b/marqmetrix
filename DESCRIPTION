@@ -7,4 +7,4 @@ Author: Olaf Trygve Berglihn
 Maintainer: Olaf Trygve Berglihn <oberg@sintef.no>
 Description: Reads Marqmatrix RAMAN specter files
 License: GPL-2
-Depends: hyperSpec
+Depends: hyperSpec, stringr
