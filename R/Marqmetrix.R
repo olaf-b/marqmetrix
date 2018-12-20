@@ -77,11 +77,11 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
 scan.txt.marqmetrix.header <- function(file, nlines) {
     hdr <- scan(file, what ="raw", sep='\t', nlines=nlines)
 
-    keywords <- unlist(lapply(hdr[seq(1,length(header), by=2)],
+    keywords <- unlist(lapply(hdr[seq(1,length(hdr), by=2)],
                               function(x) {make.names(str_remove(x, ':$'))}))
     keywords <- c(keywords, "File")
     
-    values <- header[seq(2,length(header),by=2)]
+    values <- hdr[seq(2,length(hdr),by=2)]
     values <- c(values, file)
 
     df <- data.frame(matrix(ncol=length(keywords), nrow=0))
