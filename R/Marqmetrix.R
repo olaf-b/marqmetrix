@@ -4,7 +4,7 @@
 
 scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
 				abscissa="RamanShift",
-				ordinate="DarkSubtracted",
+				ordinate="Dark Subtracted",
 				darks=FALSE) {
 
     ## set some defaults
@@ -12,14 +12,12 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
     label <- modifyList(list(.wavelength = expression(Raman ~ shift ~ "["*cm^{-1}*"]"),
         spc = expression (Count)), label)
 
-    ## find the files
-    files <- Sys.glob(files)
-
-    if (length(files) == 0) {
-        warning("No files found.")
-        return(new("hyperSpec"))
-    }
+    abscissa <- make.names(abscissa)
+    ordinate <- make.names(ordinate)
     
+    ## find the files
+    files <- unlist(lapply(files, Sys.glob))
+
     if (length(files) == 0) {
         warning("No files found.")
         return(new("hyperSpec"))
@@ -28,11 +26,12 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
     ## detect the number of lines for the header
     filebuf <- readLines(files[1])
     headlines <- which(! nzchar(filebuf))[1]
-
+        
     ## Find the column titles, remove spaces
-    colnames <- array(unlist(lapply(strsplit(filebuf[headlines+1], '\t'), gsub,
-                       pattern = " ", replacement = "", fixed=TRUE)))
-    
+    colnames <- array(unlist(lapply(strsplit(filebuf[headlines+1], '\t'), make.names)))
+                                    #gsub,
+#                       pattern = " ", replacement = "", fixed=TRUE)))
+        
     ## read the first file
     buffer  <- read.table(files[1], skip=headlines+2, header=FALSE, fill=TRUE, col.names=colnames)
     wavelength <- buffer[, abscissa]
@@ -50,6 +49,7 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
 
     ## read remaining files
     for (f in seq(along=files)[-1]) {
+        show(files[f])
         buffer  <- read.table(files[f], skip=headlines+2, header=FALSE, fill=TRUE, col.names=colnames)
 	hdr <- scan.txt.marqmetrix.header(files[f], headlines)
 
