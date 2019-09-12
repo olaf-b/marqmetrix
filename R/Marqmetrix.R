@@ -49,7 +49,6 @@ scan.txt.marqmetrix <- function(files = "*.txt", ..., label = list(),
 
     ## read remaining files
     for (f in seq(along=files)[-1]) {
-        show(files[f])
         buffer  <- read.table(files[f], skip=headlines+2, header=FALSE, fill=TRUE, col.names=colnames)
 	hdr <- scan.txt.marqmetrix.header(files[f], headlines)
 
